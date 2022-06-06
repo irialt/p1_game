@@ -16,19 +16,34 @@ export class nivel2 extends Phaser.Scene {
       super("nivel2");
       
     }
-
+    init(data) {
+        score = data.score;
+    }
     preload() {
-        this.load.tilemapTiledJSON("map", "public/assets/tilemaps/nivel1.json");
+        this.load.tilemapTiledJSON("map2", "public/assets/tilemaps/nivel2.json");
         this.load.image("fondo", "public/assets/images/sky.png");
         this.load.image(
           "platform",
           "public/assets/images/plataformas/atlas_plataformas.png"
         );
     }
+    onSecond() {
+        if (! gameOver)
+        {       
+           
+            scoreTime = scoreTime - 1; // One second
+            scoreTimeText.setText('Tiempo: ' + scoreTime);
+            if (scoreTime == 0) {
+                timedEvent.paused = true;
+                this.scene.start(
+                  "retry",
+                  { score: score } // se pasa el puntaje como dato a la escena RETRY
+                );
+         }            
+        }
+}
 
-  create() {
-
-    score = 0
+create() {
     scoreTime = 120
 
     timedEvent = this.time.addEvent({ 
@@ -38,7 +53,7 @@ export class nivel2 extends Phaser.Scene {
       loop: true 
     });
 
-    const map = this.make.tilemap({ key: "map" });
+    const map = this.make.tilemap({ key: "map2" });
 
     const tilesetBelow = map.addTilesetImage("sky_atlas", "fondo");
     const tilesetPlatform = map.addTilesetImage(
@@ -56,7 +71,7 @@ export class nivel2 extends Phaser.Scene {
 
     player = this.physics.add.sprite(spawnPoint.x, spawnPoint.y, "dude");
 
-    player.setBounce(0.5);
+    player.setBounce(0);
     player.setCollideWorldBounds(true);
 
     if ((cursors = !undefined)) {
@@ -80,8 +95,8 @@ export class nivel2 extends Phaser.Scene {
       const { x = 0, y = 0, name, type } = objData;
       switch (type) {
         case "coke": {
-          var star = coke.create(x, y, "coke");
-          star.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+          var cokestar = coke.create(x, y, "coke");
+          cokestar.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
           break;
         }
       }
@@ -102,17 +117,23 @@ export class nivel2 extends Phaser.Scene {
       }
     });
 
-    scoreText = this.add.text(30, 6, "Score: 0", {
+    scoreText = this.add.text(30, 6, "Score:" + score, {
         fontSize: "32px",
         fill: "#FFFFFF",
+    });
+    scoreTimeText = this.add.text(550, 6, "Tiempo :" + score, {
+        fontSize: "32px",
+        fill: "#000",
     });
 
     this.physics.add.collider(player, worldLayer);
 
     this.physics.add.collider(burger, worldLayer);
+    this.physics.add.collider(coke, worldLayer);
     this.physics.add.collider(bombs, worldLayer);
 
     this.physics.add.overlap(player, burger, this.collectburger, null, this);
+    this.physics.add.overlap(player, coke, this.collectcoke, null, this);
 
     this.physics.add.collider(player, bombs, this.hitBomb, null, this);
 
@@ -120,39 +141,48 @@ export class nivel2 extends Phaser.Scene {
 }
 
 update() {
-
-    if (burger.countActive(true) === 0) {
-     this.scene.start("nivel3", { score: score, scoreTime : scoreTime });
+    if (burger.countActive(true) === 0 && coke.countActive(true) === 0) {
+        setTimeout(() => {
+        this.scene.start("nivel3", { score: score });
+       }, 1000);
     }
 
     if (gameOver) {
+      
         return;
-      }
+    }
+        
+    
   
-      if (cursors.left.isDown) {
+    if (cursors.left.isDown) {
         player.setVelocityX(-160);
   
         player.anims.play("left", true);
-      } else if (cursors.right.isDown) {
+    } else if (cursors.right.isDown) {
         player.setVelocityX(160);
   
         player.anims.play("right", true);
-      } else {
+    } else {
         player.setVelocityX(0);
   
         player.anims.play("turn");
-      }
-  
-      if (cursors.up.isDown && player.body.blocked.down) {
-        player.setVelocityY(-330);
-      }
     }
+  
+    if (cursors.up.isDown && player.body.blocked.down) {
+        player.setVelocityY(-330);
+    }
+}
 
     collectburger(player, burger) {
         burger.disableBody(true, true);
         score += 10;
         scoreText.setText("Score: " + score);
    }
+   collectcoke(player, coke) {
+        coke.disableBody(true, true);
+        score += 15;
+        scoreText.setText("Score: " + score);
+    }   
 
    hitBomb(player, bombs) {
         this.physics.pause();

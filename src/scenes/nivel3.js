@@ -1,5 +1,6 @@
 var player;
 var burger;
+var coke;
 var bombs;
 var cursors;
 var score;
@@ -9,35 +10,41 @@ var scoreTime;
 var scoreTimeText;
 var timedEvent;
 
-export class nivel1 extends Phaser.Scene {
+export class nivel3 extends Phaser.Scene {
+
     
-  constructor() {
-    super("nivel1");
+    constructor() {
+      super("nivel3");
       
-  }
-
-  preload() {
-    this.load.tilemapTiledJSON("map", "public/assets/tilemaps/nivel1.json");
-    this.load.image("fondo", "public/assets/images/sky.png");
-    this.load.image("platform", "public/assets/images/plataformas/atlas_plataformas.png");
-  }
-  onSecond() {
-    if (! gameOver)
-    {       
-     scoreTime = scoreTime - 1; // One second
-      scoreTimeText.setText('Tiempo: ' + scoreTime);
-      if (scoreTime == 0) {
-        timedEvent.paused = true;
-        this.scene.start(
-          "retry",
-          { score: score } // se pasa el puntaje como dato a la escena RETRY
-        );
-      }            
     }
-  }
-  create() {
+    init(data) {
+        score = data.score;
+    }
+    preload() {
+        this.load.tilemapTiledJSON("map3", "public/assets/tilemaps/nivel3.json ");
+        this.load.image("fondo", "public/assets/images/sky.png");
+        this.load.image(
+          "platform",
+          "public/assets/images/plataformas/atlas_plataformas.png"
+        );
+    }
+    onSecond() {
+        if (! gameOver)
+        {       
 
-    score = 0
+            scoreTime = scoreTime - 1; // One second
+            scoreTimeText.setText('Tiempo: ' + scoreTime);
+            if (scoreTime == 0) {
+                timedEvent.paused = true;
+                this.scene.start(
+                  "retry",
+                  { score: score } // se pasa el puntaje como dato a la escena RETRY
+                );
+         }            
+        }
+      }
+
+  create() {
     scoreTime = 120
 
     timedEvent = this.time.addEvent({ 
@@ -47,7 +54,7 @@ export class nivel1 extends Phaser.Scene {
       loop: true 
     });
 
-    const map = this.make.tilemap({ key: "map" });
+    const map = this.make.tilemap({ key: "map3" });
 
     const tilesetBelow = map.addTilesetImage("sky_atlas", "fondo");
     const tilesetPlatform = map.addTilesetImage(
@@ -84,6 +91,19 @@ export class nivel1 extends Phaser.Scene {
       }
     });
 
+    coke = this.physics.add.group();
+    objectsLayer.objects.forEach((objData) => {
+      const { x = 0, y = 0, name, type } = objData;
+      switch (type) {
+        case "coke": {
+          var cokestar = coke.create(x, y, "coke");
+          cokestar.setBounceY(Phaser.Math.FloatBetween(0.4, 0.8));
+          break;
+        }
+      }
+    });
+
+
     bombs = this.physics.add.group();
     objectsLayer.objects.forEach((objData) => {
       const { x = 0, y = 0, name, type } = objData;
@@ -98,21 +118,23 @@ export class nivel1 extends Phaser.Scene {
       }
     });
 
-    scoreText = this.add.text(30, 6, "Score : 0", {
+    scoreText = this.add.text(30, 6, "Score:" + score, {
         fontSize: "32px",
         fill: "#FFFFFF",
     });
-    scoreTimeText = this.add.text(550, 6, "Tiempo : 0", {
-      fontSize: "32px",
-      fill: "#000",
-  });
+    scoreTimeText = this.add.text(500, 6, "Tiempo :" + score, {
+        fontSize: "32px",
+        fill: "#000",
+    });
 
     this.physics.add.collider(player, worldLayer);
 
     this.physics.add.collider(burger, worldLayer);
+    this.physics.add.collider(coke, worldLayer);
     this.physics.add.collider(bombs, worldLayer);
 
     this.physics.add.overlap(player, burger, this.collectburger, null, this);
+    this.physics.add.overlap(player, coke, this.collectcoke, null, this);
 
     this.physics.add.collider(player, bombs, this.hitBomb, null, this);
 
@@ -120,39 +142,44 @@ export class nivel1 extends Phaser.Scene {
 }
 
 update() {
-
-    if (burger.countActive(true) === 0) {
-     this.scene.start("nivel2", { score: score, scoreTime : scoreTime });
+    if (score == "415") {
+        setTimeout(() => {
+            this.scene.start("victory", { score: score });
+           }, 1000);
     }
-
     if (gameOver) {
         return;
-      }
+    }
   
-      if (cursors.left.isDown) {
+    if (cursors.left.isDown) {
         player.setVelocityX(-160);
   
         player.anims.play("left", true);
-      } else if (cursors.right.isDown) {
+    } else if (cursors.right.isDown) {
         player.setVelocityX(160);
   
         player.anims.play("right", true);
-      } else {
+    } else {
         player.setVelocityX(0);
   
         player.anims.play("turn");
-      }
-  
-      if (cursors.up.isDown && player.body.blocked.down) {
-        player.setVelocityY(-330);
-      }
     }
+  
+    if (cursors.up.isDown && player.body.blocked.down) {
+        player.setVelocityY(-330);
+    }
+}
 
     collectburger(player, burger) {
         burger.disableBody(true, true);
         score += 10;
         scoreText.setText("Score: " + score);
    }
+   collectcoke(player, coke) {
+        coke.disableBody(true, true);
+        score += 15;
+        scoreText.setText("Score: " + score);
+    }   
 
    hitBomb(player, bombs) {
         this.physics.pause();
