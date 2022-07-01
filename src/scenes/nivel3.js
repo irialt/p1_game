@@ -142,14 +142,12 @@ export class nivel3 extends Phaser.Scene {
 }
 
 update() {
-    if (score == "415") {
+    if (score == "395") {
         setTimeout(() => {
             this.scene.start("victory", { score: score });
            }, 1000);
     }
-    if (gameOver) {
-        return;
-    }
+   
   
     if (cursors.left.isDown) {
         player.setVelocityX(-160);
